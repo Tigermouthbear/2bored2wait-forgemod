@@ -1,0 +1,16 @@
+[
+{
+  "modid": "2bored2wait",
+  "name": "2bored2wait Mod",
+  "description": "A remake of 2bored2wait without the proxy and that runs as a forge mod.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Tigermouthbear"],
+  "credits": "themoonisacheese",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]

@@ -1,0 +1,94 @@
+<html>
+    <head>
+        <title>2Bored2Wait-Mod</title>
+        <style>
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100vw;
+                height: 100vh;
+                margin: 0;
+                background-color: rgb(16, 16, 26);
+            }
+
+            h1, .content {
+                margin: 0;
+                color: rgb(228, 228, 228);
+                font-family: sans-serif;
+            }
+
+            button {
+                width: 128px;
+                height: 32px;
+                background-color: transparent;
+                border: none;
+                outline: none;
+                cursor: pointer;
+                font-family: sans-serif;
+                border-radius: 5px;
+                color: #e4e4e4;
+                transition-duration: 0.3s;
+            }
+
+            button.start {
+                border: 3px solid #25c525;
+            }
+
+            button.stop {
+                border: 2px solid #f32727;
+            }
+
+            .place, .ETA{
+                display: inline-block;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="content">
+            <h1>Place in queue: <div class="place">None</div> </h1>
+            <h1>ETA: <div class="ETA">None</div> </h1>
+            Password (leave blank if none) : <input type="password" class="password"><br>
+            <button id="queueButton" class="start">Start queuing</button><br><br>
+        </div>
+        <script>
+            setInterval(() => { //each second, update the info.
+                const xhr = new XMLHttpRequest();
+                xhr.open("GET", "GET/update", true);
+                xhr.onreadystatechange = function() {
+                    if(this.readyState == 4 && this.status == 200) {
+                        const response = JSON.parse(this.responseText);
+                        document.getElementsByClassName("place")[0].innerHTML = response.place;
+                        document.getElementsByClassName("ETA")[0].innerHTML = response.ETA;
+                        const queueButton = document.getElementById('queueButton');
+                        if(response.inQueue) {
+                            queueButton.innerHTML = "Stop queuing";
+                            queueButton.className = 'stop';
+                        } else {
+                            queueButton.innerHTML = "Start queuing";
+                            queueButton.className = 'start';
+                        }
+                    }
+                }
+                xhr.send();
+
+            }, 1000);
+
+            document.getElementById('queueButton').addEventListener('click', function() {
+                const queueButton = document.getElementById('queueButton');
+                const xhr = new XMLHttpRequest();
+                xhr.open("GET", "GET/" + queueButton.className, true);
+                xhr.send();
+                if(queueButton.className == 'stop') {
+                    queueButton.innerHTML = 'Start queuing';
+                    queueButton.className = 'start';
+                    document.getElementsByClassName("place")[0].innerHTML = 'None';
+                    document.getElementsByClassName("ETA")[0].innerHTML = 'None';
+                } else {
+                    queueButton.innerHTML = 'Stop queuing';
+                    queueButton.className = 'stop';
+                }
+            });
+        </script>
+    </body>
+</html>
