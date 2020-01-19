@@ -8,9 +8,9 @@ import net.minecraft.client.multiplayer.GuiConnecting;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.network.play.server.SPacketDisconnect;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraftforge.fml.common.FMLLog;
 
 import java.io.IOException;
-import java.net.URI;
 
 /**
  * @author Tigermouthbear
@@ -19,47 +19,68 @@ import java.net.URI;
 
 public class GetHandler implements HttpHandler, TwoBoredTwoWait.Globals
 {
-	private static final ServerData TOOBEETWOTEA = new ServerData("2b2t.org", "2b2t.org", false);
+	private static final String password = TwoBoredTwoWait.CONFIG.getProperty("password");
+	private static final ServerData TWOBEEWTOTEA = new ServerData("2b2t", "2b2t.org", false);
 
 	@Override
 	public void handle(HttpExchange he) throws IOException
 	{
-		URI requestedUri = he.getRequestURI();
-		String uri = requestedUri.toString();
+		String uri = he.getRequestURI().toString();
 
-		if(uri.contains("start"))
+		if(uri.contains("update"))
 		{
 			he.sendResponseHeaders(200, 0);
+			he.getResponseBody().write(getUpdate().getBytes());
 			he.close();
-
-			//Just in case
-			if(MC.world != null) disconnect();
-			//Then connect to server
-			MC.displayGuiScreen(new GuiConnecting(new GuiMainMenu(), MC, TOOBEETWOTEA));
+			return;
 		}
-		else if(uri.contains("stop"))
+
+		if(he.getRequestHeaders().get("Xpassword").get(0).equals(password))
 		{
-			he.sendResponseHeaders(200, 0);
-			he.close();
-
-			//Disconnect from world
-			disconnect();
+			if(uri.contains("start"))
+			{
+				he.sendResponseHeaders(200, 0);
+				he.close();
+				connect();
+			}
+			else if(uri.contains("stop"))
+			{
+				he.sendResponseHeaders(200, 0);
+				he.close();
+				disconnect();
+				TwoBoredTwoWait.resetData();
+			}
 		}
-		else if(uri.contains("update"))
+		else
 		{
-			he.sendResponseHeaders(200, 0);
-
-			//Get info about if the client is connected to 2b2t
-			boolean isInQueue = MC.getCurrentServerData().serverIP.contains("2b2t.org");
-			String response = "{\"username\": \""+ MC.player.getDisplayNameString() +"\",\"place\": \""+ TwoBoredTwoWait.placeInQueue +"\",\"ETA\": \""+ TwoBoredTwoWait.eta +"\", \"inQueue\": " + isInQueue +"}";
-
-			he.getResponseBody().write(response.getBytes());
+			he.sendResponseHeaders(404, 0);
 			he.close();
 		}
+	}
+
+	private void connect()
+	{
+		//Make sure that player isn't connected to a world
+		disconnect();
+
+		//TODO: Fix this!!
+		MC.player.closeScreen();
+		FMLLog.log.info("connecting...");
+		MC.displayGuiScreen(new GuiConnecting(new GuiMainMenu(), MC, "2b2t.org", 25565));
 	}
 
 	private void disconnect()
 	{
 		MC.getConnection().handleDisconnect(new SPacketDisconnect(new TextComponentString("Logged out by the 2bored2wait mod")));
+	}
+
+	private String getUpdate()
+	{
+		boolean isInQueue;
+
+		if(MC.getCurrentServerData() != null) isInQueue = MC.getCurrentServerData().serverIP.contains("2b2t.org");
+		else isInQueue = false;
+
+		return "{\"username\": \""+ MC.player.getDisplayNameString() +"\",\"place\": \""+ TwoBoredTwoWait.getPosition() +"\",\"ETA\": \""+ TwoBoredTwoWait.getEta() +"\", \"inQueue\": " + isInQueue +"}";
 	}
 }

@@ -78,6 +78,7 @@
                 const queueButton = document.getElementById('queueButton');
                 const xhr = new XMLHttpRequest();
                 xhr.open("GET", "GET/" + queueButton.className, true);
+                xhr.setRequestHeader('XPassword', document.getElementsByClassName('password')[0].value)
                 xhr.send();
                 if(queueButton.className == 'stop') {
                     queueButton.innerHTML = 'Start queuing';

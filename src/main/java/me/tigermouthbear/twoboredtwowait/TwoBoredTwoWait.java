@@ -16,10 +16,11 @@ public class TwoBoredTwoWait
     public static final String NAME = "2bored2wait Mod";
     public static final String VERSION = "1.0";
 
-    public static String placeInQueue = "None";
-    //TODO: Add eta to the json in webserver/GetHandler
-    //Change these to use the tab list maybe?
-    public static String eta = "0";
+    public static final Config CONFIG = new Config();
+
+    private static long placeInQueue = -1;
+    private static long startTime = -1;
+    private static long startPosition = -1;
 
     public interface Globals
     {
@@ -38,7 +39,57 @@ public class TwoBoredTwoWait
     {
         if(event.getMessage().getUnformattedText().startsWith("Position in queue: "))
         {
-            placeInQueue = event.getMessage().getUnformattedText().split("Position in queue: ")[1];
+            placeInQueue = Integer.valueOf(event.getMessage().getUnformattedText().split("Position in queue: ")[1]);
+
+            if(startPosition == -1 && startTime == -1)
+            {
+                startPosition = placeInQueue;
+                startTime = System.currentTimeMillis();
+            }
         }
+    }
+
+    public static String getEta()
+    {
+        /*if(!Globals.MC.getCurrentServerData().serverIP.contains("2b2t.org")) return "None";
+
+        long rate = (startPosition - placeInQueue)/(System.currentTimeMillis() - startTime);
+        long milliseconds = rate*placeInQueue;
+        int seconds = (int) (milliseconds / 1000) % 60 ;
+        int minutes = (int) ((milliseconds / (1000*60)) % 60);
+        int hours   = (int) ((milliseconds / (1000*60*60)) % 24);
+
+        String time = "error";
+
+        if(hours > 0)
+        {
+            time += hours + " hrs, ";
+        }
+
+        if(minutes > 0)
+        {
+            time += minutes + " min, ";
+        }
+
+        if(seconds > 0)
+        {
+            time += seconds + " sec";
+        }
+
+        return String.valueOf(rate);*/
+        return "WIP";
+    }
+
+    public static String getPosition()
+    {
+        if(!Globals.MC.getCurrentServerData().serverIP.contains("2b2t.org")) return "None";
+        return String.valueOf((int)placeInQueue);
+    }
+
+    public static void resetData()
+    {
+        placeInQueue = -1;
+        startTime = -1;
+        startPosition = -1;
     }
 }

@@ -1,6 +1,7 @@
 package me.tigermouthbear.twoboredtwowait.webserver;
 
 import com.sun.net.httpserver.HttpServer;
+import me.tigermouthbear.twoboredtwowait.TwoBoredTwoWait;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -12,7 +13,7 @@ import java.net.InetSocketAddress;
 
 public class WebServer
 {
-	private static final int PORT = 80;
+	private static final int PORT = Integer.valueOf(TwoBoredTwoWait.CONFIG.getProperty("port"));
 
 	public WebServer()
 	{
