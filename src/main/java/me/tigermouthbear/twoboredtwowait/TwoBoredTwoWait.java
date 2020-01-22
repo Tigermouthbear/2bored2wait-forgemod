@@ -1,17 +1,23 @@
 package me.tigermouthbear.twoboredtwowait;
 
 import me.tigermouthbear.twoboredtwowait.webserver.WebServer;
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiMainMenu;
+import net.minecraft.client.multiplayer.GuiConnecting;
+import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.network.play.server.SPacketDisconnect;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 
-@Mod(modid = TwoBoredTwoWait.MODID, name = TwoBoredTwoWait.NAME, version = TwoBoredTwoWait.VERSION)
-public class TwoBoredTwoWait
+import static me.tigermouthbear.twoboredtwowait.TwoBoredTwoWait.*;
+
+@Mod(modid = MODID, name = NAME, version = VERSION)
+public class TwoBoredTwoWait implements Globals
 {
-    //TODO: Fix disconnecting and connecting in webserver/GetHandler
     public static final String MODID = "2bored2wait";
     public static final String NAME = "2bored2wait Mod";
     public static final String VERSION = "1.0";
@@ -21,32 +27,13 @@ public class TwoBoredTwoWait
     private static long placeInQueue = -1;
     private static long startTime = -1;
     private static long startPosition = -1;
-
-    public interface Globals
-    {
-        Minecraft MC = Minecraft.getMinecraft();
-    }
+    private static boolean shouldConnect = false;
 
     @Mod.EventHandler
     public void Init(FMLInitializationEvent event)
     {
         MinecraftForge.EVENT_BUS.register(this);
         new WebServer();
-    }
-
-    @SubscribeEvent
-    public void onChat(ClientChatReceivedEvent event)
-    {
-        if(event.getMessage().getUnformattedText().startsWith("Position in queue: "))
-        {
-            placeInQueue = Integer.valueOf(event.getMessage().getUnformattedText().split("Position in queue: ")[1]);
-
-            if(startPosition == -1 && startTime == -1)
-            {
-                startPosition = placeInQueue;
-                startTime = System.currentTimeMillis();
-            }
-        }
     }
 
     public static String getEta()
@@ -91,5 +78,52 @@ public class TwoBoredTwoWait
         placeInQueue = -1;
         startTime = -1;
         startPosition = -1;
+    }
+
+    public static void connect()
+    {
+        shouldConnect = true;
+    }
+
+    public static void disconnect()
+    {
+        if(MC.world == null) return;
+        MC.getConnection().handleDisconnect(new SPacketDisconnect(new TextComponentString("Logged out by the 2bored2wait mod")));
+        resetData();
+    }
+
+    public static String getUpdate()
+    {
+        boolean isInQueue;
+
+        if(MC.getCurrentServerData() != null) isInQueue = MC.getCurrentServerData().serverIP.contains("2b2t.org");
+        else isInQueue = false;
+
+        return "{\"username\": \""+ MC.player.getDisplayNameString() +"\",\"place\": \""+ getPosition() +"\",\"ETA\": \""+ getEta() +"\", \"inQueue\": " + isInQueue +"}";
+    }
+
+    @SubscribeEvent
+    public void onChat(ClientChatReceivedEvent event)
+    {
+        if(event.getMessage().getUnformattedText().startsWith("Position in queue: "))
+        {
+            placeInQueue = Integer.valueOf(event.getMessage().getUnformattedText().split("Position in queue: ")[1]);
+
+            if(startPosition == -1 && startTime == -1)
+            {
+                startPosition = placeInQueue;
+                startTime = System.currentTimeMillis();
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public void onTick(TickEvent.ClientTickEvent event)
+    {
+        if(shouldConnect)
+        {
+            MC.addScheduledTask(() -> MC.displayGuiScreen(new GuiConnecting(new GuiMainMenu(), MC, new ServerData("2b2t", "2b2t.org", false))));
+            shouldConnect = false;
+        }
     }
 }
