@@ -1,6 +1,7 @@
 package me.tigermouthbear.twoboredtwowait;
 
 import me.tigermouthbear.twoboredtwowait.webserver.WebServer;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.client.multiplayer.GuiConnecting;
 import net.minecraft.client.multiplayer.ServerData;
@@ -11,23 +12,20 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
 
-import static me.tigermouthbear.twoboredtwowait.TwoBoredTwoWait.*;
-
-@Mod(modid = MODID, name = NAME, version = VERSION)
-public class TwoBoredTwoWait implements Globals
+@Mod(modid = TwoBoredTwoWait.MODID, name = TwoBoredTwoWait.NAME, version = TwoBoredTwoWait.VERSION)
+public class TwoBoredTwoWait
 {
     public static final String MODID = "2bored2wait";
     public static final String NAME = "2bored2wait Mod";
     public static final String VERSION = "1.0";
 
     public static final Config CONFIG = new Config();
+    public static final Minecraft MC = Minecraft.getMinecraft();
 
-    private static long placeInQueue = -1;
+    private static int placeInQueue = -1;
     private static long startTime = -1;
-    private static long startPosition = -1;
-    private static boolean shouldConnect = false;
+    private static int startPosition = -1;
 
     @Mod.EventHandler
     public void Init(FMLInitializationEvent event)
@@ -36,70 +34,37 @@ public class TwoBoredTwoWait implements Globals
         new WebServer();
     }
 
-    public static String getEta()
+    private static String getEta()
     {
-        /*if(!Globals.MC.getCurrentServerData().serverIP.contains("2b2t.org")) return "None";
+        if(!MC.getCurrentServerData().serverIP.contains("2b2t.org")) return "None";
 
-        long rate = (startPosition - placeInQueue)/(System.currentTimeMillis() - startTime);
-        long milliseconds = rate*placeInQueue;
+        if((startPosition - placeInQueue) == 0) return "Calculating...";
+
+        long rate = ((System.nanoTime() - startTime)/1000000)/(startPosition - placeInQueue);
+        long milliseconds = (int) (rate*placeInQueue);
         int seconds = (int) (milliseconds / 1000) % 60 ;
         int minutes = (int) ((milliseconds / (1000*60)) % 60);
         int hours   = (int) ((milliseconds / (1000*60*60)) % 24);
 
-        String time = "error";
+        String time = "";
 
         if(hours > 0)
         {
-            time += hours + " hrs, ";
+            time += hours + "h ";
         }
 
         if(minutes > 0)
         {
-            time += minutes + " min, ";
+            time += minutes + "m ";
         }
 
-        if(seconds > 0)
-        {
-            time += seconds + " sec";
-        }
-
-        return String.valueOf(rate);*/
-        return "WIP";
+        return (time);
     }
 
-    public static String getPosition()
+    private static String getPosition()
     {
-        if(!Globals.MC.getCurrentServerData().serverIP.contains("2b2t.org")) return "None";
-        return String.valueOf((int)placeInQueue);
-    }
-
-    public static void resetData()
-    {
-        placeInQueue = -1;
-        startTime = -1;
-        startPosition = -1;
-    }
-
-    public static void connect()
-    {
-        shouldConnect = true;
-    }
-
-    public static void disconnect()
-    {
-        if(MC.world == null) return;
-        MC.getConnection().handleDisconnect(new SPacketDisconnect(new TextComponentString("Logged out by the 2bored2wait mod")));
-        resetData();
-    }
-
-    public static String getUpdate()
-    {
-        boolean isInQueue;
-
-        if(MC.getCurrentServerData() != null) isInQueue = MC.getCurrentServerData().serverIP.contains("2b2t.org");
-        else isInQueue = false;
-
-        return "{\"username\": \""+ MC.player.getDisplayNameString() +"\",\"place\": \""+ getPosition() +"\",\"ETA\": \""+ getEta() +"\", \"inQueue\": " + isInQueue +"}";
+        if(!MC.getCurrentServerData().serverIP.contains("2b2t.org")) return "None";
+        return String.valueOf(placeInQueue);
     }
 
     @SubscribeEvent
@@ -112,18 +77,37 @@ public class TwoBoredTwoWait implements Globals
             if(startPosition == -1 && startTime == -1)
             {
                 startPosition = placeInQueue;
-                startTime = System.currentTimeMillis();
+                startTime = System.nanoTime();
             }
         }
     }
 
     @SubscribeEvent
-    public void onTick(TickEvent.ClientTickEvent event)
+    public void onStart(GetRequestEvent.Start event)
     {
-        if(shouldConnect)
-        {
-            MC.addScheduledTask(() -> MC.displayGuiScreen(new GuiConnecting(new GuiMainMenu(), MC, new ServerData("2b2t", "2b2t.org", false))));
-            shouldConnect = false;
-        }
+        MC.addScheduledTask(() -> MC.displayGuiScreen(new GuiConnecting(new GuiMainMenu(), MC, new ServerData("2b2t", "2b2t.org", false))));
+    }
+
+    @SubscribeEvent
+    public void onStop(GetRequestEvent.Stop event)
+    {
+        if(MC.world == null) return;
+        MC.getConnection().handleDisconnect(new SPacketDisconnect(new TextComponentString("Logged out by the 2bored2wait mod")));
+
+        //reset data
+        placeInQueue = -1;
+        startTime = -1;
+        startPosition = -1;
+    }
+
+    @SubscribeEvent
+    public void onUpdate(GetRequestEvent.Update event)
+    {
+        boolean isInQueue;
+
+        if(MC.getCurrentServerData() != null) isInQueue = MC.getCurrentServerData().serverIP.contains("2b2t.org");
+        else isInQueue = false;
+
+        event.setData("{\"username\": \""+ MC.player.getDisplayNameString() +"\",\"place\": \""+ getPosition() +"\",\"ETA\": \""+ getEta() +"\", \"inQueue\": " + isInQueue +"}");
     }
 }

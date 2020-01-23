@@ -2,7 +2,6 @@ package me.tigermouthbear.twoboredtwowait.webserver;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import me.tigermouthbear.twoboredtwowait.Globals;
 import me.tigermouthbear.twoboredtwowait.TwoBoredTwoWait;
 import net.minecraft.util.ResourceLocation;
 import org.apache.commons.io.FileUtils;
@@ -11,12 +10,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import static me.tigermouthbear.twoboredtwowait.TwoBoredTwoWait.MC;
+
 /**
  * @author Tigermouthbear
  * 1/16/20
  */
 
-public class IndexHandler implements HttpHandler, Globals
+public class IndexHandler implements HttpHandler
 {
 	static final ResourceLocation indexLocation = new ResourceLocation(TwoBoredTwoWait.MODID, "index.html");
 	private File index = File.createTempFile("index-temp", "");
