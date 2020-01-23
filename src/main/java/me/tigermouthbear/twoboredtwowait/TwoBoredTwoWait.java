@@ -26,6 +26,8 @@ public class TwoBoredTwoWait
     private static int placeInQueue = -1;
     private static long startTime = -1;
     private static int startPosition = -1;
+    private static String prevEta = null;
+    private static int etaDelay = 0;
 
     @Mod.EventHandler
     public void Init(FMLInitializationEvent event)
@@ -39,6 +41,10 @@ public class TwoBoredTwoWait
         if(!MC.getCurrentServerData().serverIP.contains("2b2t.org")) return "None";
 
         if((startPosition - placeInQueue) == 0) return "Calculating...";
+
+        //delay system
+        if(etaDelay == 60) etaDelay = 0;
+        if(etaDelay++ != 0) return prevEta;
 
         long rate = ((System.nanoTime() - startTime)/1000000)/(startPosition - placeInQueue);
         long milliseconds = (int) (rate*placeInQueue);
@@ -58,7 +64,8 @@ public class TwoBoredTwoWait
             time += minutes + "m ";
         }
 
-        return (time);
+        prevEta = time;
+        return(time);
     }
 
     private static String getPosition()
